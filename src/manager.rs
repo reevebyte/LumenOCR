@@ -68,6 +68,7 @@ pub struct LumenManager {
     model_dir: PathBuf,
     worker_exe: Option<PathBuf>,
     worker: AsyncMutex<Option<WorkerProcess>>,
+    download_op: AsyncMutex<()>,
     download: Mutex<DownloadState>,
     idle_unload_secs: AtomicU32,
     reaper_started: AtomicBool,
@@ -79,6 +80,7 @@ impl LumenManager {
             model_dir,
             worker_exe: None,
             worker: AsyncMutex::new(None),
+            download_op: AsyncMutex::new(()),
             download: Mutex::new(DownloadState::default()),
             idle_unload_secs: AtomicU32::new(180),
             reaper_started: AtomicBool::new(false),
@@ -90,6 +92,7 @@ impl LumenManager {
             model_dir,
             worker_exe: Some(worker_exe),
             worker: AsyncMutex::new(None),
+            download_op: AsyncMutex::new(()),
             download: Mutex::new(DownloadState::default()),
             idle_unload_secs: AtomicU32::new(180),
             reaper_started: AtomicBool::new(false),
@@ -210,6 +213,9 @@ impl LumenManager {
     where
         F: FnMut(Status) + Send,
     {
+        let _op_guard = self.download_op.try_lock().map_err(|_| {
+            LumenError::new(ErrorKind::InvalidInput, "本地 OCR 模型正在下载中，请稍候")
+        })?;
         let cancel = {
             let mut dl = self.download.lock().unwrap_or_else(|e| e.into_inner());
             if dl.active {
@@ -265,6 +271,7 @@ impl LumenManager {
 
     pub async fn remove(&self) -> Result<Status> {
         self.cancel_download();
+        let _op_guard = self.download_op.lock().await;
         self.shutdown_worker().await;
         if let Some(manifest) = default_manifest() {
             remove_assets(&self.model_dir, &manifest)?;

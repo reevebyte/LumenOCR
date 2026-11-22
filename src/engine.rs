@@ -317,7 +317,7 @@ pub fn worker_main(model_dir: &Path) -> i32 {
                         Err(message) => {
                             let _ = send(&mut writer, &WorkerResponse::Error { message });
                             let _ = std::io::Write::flush(&mut writer);
-                            exit_clean(1);
+                            return exit_clean(1);
                         }
                     }
                 }

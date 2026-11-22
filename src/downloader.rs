@@ -9,7 +9,7 @@ use std::{
     fs::{self, File},
     io::{self, Read, Write},
     path::{Path, PathBuf},
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tar::Archive;
 use tokio_util::sync::CancellationToken;
@@ -367,16 +367,20 @@ where
                     };
 
                     let mut asset_downloaded = 0u64;
+                    let mut last_emit = Instant::now();
                     let dl =
                         download_stream_to_file(&client, url, &part_download, &stop, |delta| {
                             asset_downloaded = asset_downloaded.saturating_add(delta);
-                            let capped = asset_downloaded.min(asset.expected_bytes);
-                            on_progress(DownloadProgress {
-                                downloaded_bytes: completed_bytes
-                                    .saturating_add(capped)
-                                    .min(total_bytes),
-                                total_bytes: Some(total_bytes),
-                            });
+                            if last_emit.elapsed() >= Duration::from_millis(80) {
+                                last_emit = Instant::now();
+                                let capped = asset_downloaded.min(asset.expected_bytes);
+                                on_progress(DownloadProgress {
+                                    downloaded_bytes: completed_bytes
+                                        .saturating_add(capped)
+                                        .min(total_bytes),
+                                    total_bytes: Some(total_bytes),
+                                });
+                            }
                         })
                         .await;
 
