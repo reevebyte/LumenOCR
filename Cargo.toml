@@ -1,0 +1,32 @@
+[package]
+name = "lumen-ocr"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT"
+description = "Lightweight, pure-Rust PP-OCRv5 engine with dynamic ONNX Runtime loading, on-demand SHA-256 verified downloads, and isolated worker memory reclamation."
+repository = "https://github.com/reevebyte/LumenOCR"
+homepage = "https://github.com/reevebyte/LumenOCR"
+keywords = ["ocr", "ppocr", "onnx", "paddleocr", "rapidocr"]
+categories = ["computer-vision", "multimedia::images", "command-line-utilities"]
+
+[dependencies]
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+ndarray = "0.17"
+ort = { version = "=2.0.0-rc.13", default-features = false, features = ["std", "load-dynamic", "ndarray", "api-20"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "process", "io-util", "fs"] }
+tokio-util = "0.7"
+futures-util = "0.3"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+sha2 = "0.10"
+flate2 = "1"
+tar = "0.4"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+url = "2"
+
+[dev-dependencies]
+tempfile = "3"
+wiremock = "0.6"
